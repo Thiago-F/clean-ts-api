@@ -1,11 +1,4 @@
-import {
-  Authentication,
-  AuthenticationModel,
-  LoadAccountByEmailRepository,
-  HashComparer,
-  TokenGenerator,
-  UpdateAccessTokenRepository
-} from './db-authentication-protocols'
+import { Authentication, AuthenticationModel, LoadAccountByEmailRepository, HashComparer, TokenGenerator, UpdateAccessTokenRepository } from './db-authentication-protocols'
 
 export class DbAuthentication implements Authentication {
   private readonly loadAccountByEmailRepository: LoadAccountByEmailRepository
@@ -13,12 +6,7 @@ export class DbAuthentication implements Authentication {
   private readonly tokenGenerator: TokenGenerator
   private readonly updateAccessTokenRepository: UpdateAccessTokenRepository
 
-  constructor (
-    loadAccountByEmailRepository: LoadAccountByEmailRepository,
-    hashCompare: HashComparer,
-    tokenGenerator: TokenGenerator,
-    updateAccessTokenRepository: UpdateAccessTokenRepository
-  ) {
+  constructor (loadAccountByEmailRepository: LoadAccountByEmailRepository, hashCompare: HashComparer, tokenGenerator: TokenGenerator, updateAccessTokenRepository: UpdateAccessTokenRepository) {
     this.loadAccountByEmailRepository = loadAccountByEmailRepository
     this.hashCompare = hashCompare
     this.tokenGenerator = tokenGenerator
@@ -27,17 +15,14 @@ export class DbAuthentication implements Authentication {
 
   async auth (authentication: AuthenticationModel): Promise<string | null> {
     const account = await this.loadAccountByEmailRepository.load(authentication.email)
+    if (!account) return null
 
-    if (account) {
-      const isValid = await this.hashCompare.compare(authentication.password, account?.password)
-      if (isValid) {
-        const accessToken = await this.tokenGenerator.generate(account.id)
-        await this.updateAccessTokenRepository.update(account.id, accessToken)
+    const isValid = await this.hashCompare.compare(authentication.password, account?.password)
+    if (!isValid) return null
 
-        return accessToken
-      }
-    }
+    const accessToken = await this.tokenGenerator.generate(account.id)
+    await this.updateAccessTokenRepository.update(account.id, accessToken)
 
-    return null
+    return accessToken
   }
 }
