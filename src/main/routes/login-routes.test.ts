@@ -2,7 +2,10 @@ import request from 'supertest'
 import app from '../config/app'
 
 import { MongoHelper } from '../../infra/db/mongodb/helpers/mongo-helper'
+import { Collection } from 'mongodb'
+// import { hash } from 'bcrypt'
 
+let accountCollection: Collection
 describe('Login Routes', () => {
   beforeAll(async () => {
     await MongoHelper.connect(process.env.MONGO_URL as string)
@@ -13,7 +16,7 @@ describe('Login Routes', () => {
   })
 
   beforeEach(async () => {
-    const accountCollection = await MongoHelper.getCollection('accounts')
+    accountCollection = await MongoHelper.getCollection('accounts')
     await accountCollection.deleteMany({})
   })
 
@@ -26,6 +29,38 @@ describe('Login Routes', () => {
           email: 'thiago@mail.com',
           password: 'teste123',
           passwordConfirmation: 'teste123'
+        })
+        .expect(200)
+    })
+  })
+
+  describe('POST /login', () => {
+    test('should return 200 on login', async () => {
+      await request(app)
+        .post('/api/signup')
+        .send({
+          name: 'Thiago',
+          email: 'thiago@mail.com',
+          password: 'teste123',
+          passwordConfirmation: 'teste123'
+        })
+
+      /*
+        chamar a rota sign up ou inserir diretamente no banco
+      */
+
+      // const password = await hash('teste123', 12)
+      // await accountCollection.insertOne({
+      //   name: 'Thiago',
+      //   email: 'thiago@mail.com',
+      //   password
+      // })
+
+      await request(app)
+        .post('/api/login')
+        .send({
+          email: 'thiago@mail.com',
+          password: 'teste123'
         })
         .expect(200)
     })
